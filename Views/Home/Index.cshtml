@@ -1,8 +1,548 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+@{
+    Layout = null;
 }
+<!DOCTYPE html>
+<html class="light" lang="vi">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Quản lý Sách - Admin Portal</title>
+    <!-- Tailwind CSS v3 CDN -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <!-- Fonts and Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: #f8f9fa; 
+        }
+        /* Toast animations */
+        .toast-enter {
+            animation: slideIn 0.3s ease-out forwards;
+        }
+        .toast-exit {
+            animation: fadeOut 0.3s ease-in forwards;
+        }
+        @keyframes slideIn {
+            from { transform: translateX(120%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes fadeOut {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(120%); opacity: 0; }
+        }
+    </style>
+</head>
+<body class="bg-[#f8f9fa] text-[#191c1d]">
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+    <!-- Toast Notifications Container -->
+    <div id="toast-container" class="fixed top-4 right-4 z-[110] flex flex-col gap-3 pointer-events-none"></div>
+
+    <!-- TopNavBar -->
+    <header class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-4 h-12 bg-white border-b border-[#e1e3e4]">
+        <div class="flex items-center gap-4">
+            <span class="text-xl font-bold text-[#0059bb] flex items-center gap-2">
+                <i class="fa-solid fa-book-open"></i> Quản lý Sách
+            </span>
+        </div>
+        <div class="flex items-center gap-4">
+            <div class="hidden md:flex items-center gap-6 mr-4">
+                <a class="text-sm font-semibold text-[#0059bb] border-b-2 border-[#0059bb] py-2 transition-colors" href="#">Dashboard</a>
+                <a class="text-sm font-medium text-[#414754] hover:bg-[#edeeef] transition-colors py-2 px-2 rounded" href="/swagger" target="_blank">Swagger API</a>
+            </div>
+            <span class="material-symbols-outlined text-[#0059bb] cursor-pointer hover:bg-[#edeeef] p-1.5 rounded-full" title="Thông báo">notifications</span>
+            <span class="material-symbols-outlined text-[#0059bb] cursor-pointer hover:bg-[#edeeef] p-1.5 rounded-full" title="Tài khoản">account_circle</span>
+        </div>
+    </header>
+
+    <!-- SideNavBar -->
+    <aside class="fixed left-0 top-0 h-full flex flex-col pt-16 pb-4 px-4 bg-[#f3f4f5] border-r border-[#e1e3e4] w-64 hidden lg:flex">
+        <div class="mb-8 px-2">
+            <h2 class="text-lg font-bold text-[#0059bb]">Quản lý Sách</h2>
+            <p class="text-[#414754] text-xs">Hệ thống quản trị Cửa hàng</p>
+        </div>
+        <nav class="flex flex-col gap-1.5">
+            <a class="flex items-center gap-3 px-4 py-2.5 bg-[#d8e1ea] text-[#141d23] rounded-lg font-bold active:scale-95 transition-all" href="#">
+                <span class="material-symbols-outlined">dashboard</span>
+                <span>Dashboard</span>
+            </a>
+            <a class="flex items-center gap-3 px-4 py-2.5 text-[#575f67] hover:bg-[#edeeef] rounded-lg font-medium transition-all active:scale-95" href="/swagger" target="_blank">
+                <span class="material-symbols-outlined">api</span>
+                <span>Swagger API Docs</span>
+            </a>
+            <a class="flex items-center gap-3 px-4 py-2.5 text-[#575f67] hover:bg-[#edeeef] rounded-lg font-medium transition-all active:scale-95" href="#" id="sidebar-reset">
+                <span class="material-symbols-outlined">refresh</span>
+                <span>Làm mới Form</span>
+            </a>
+        </nav>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="lg:ml-64 pt-16 px-6 pb-12">
+        <div class="max-w-6xl mx-auto space-y-6 mt-4">
+            
+            <!-- Section: Thông tin sách -->
+            <section class="bg-white border border-[#e1e3e4] rounded-lg overflow-hidden shadow-sm">
+                <div class="bg-[#0059bb]/5 px-5 py-3.5 border-b border-[#e1e3e4]">
+                    <h3 class="font-bold text-[#0059bb] text-base flex items-center gap-2">
+                        <span class="material-symbols-outlined">edit_note</span> Thông tin sách
+                    </h3>
+                </div>
+                <div class="p-5">
+                    <form id="book-form" onsubmit="return false;" class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                            <!-- Id Field -->
+                            <div class="space-y-1.5">
+                                <label class="block font-bold text-sm text-[#191c1d]">Mã Sách (Id)</label>
+                                <input id="book-id" class="w-full border border-[#c1c6d7] bg-[#f3f4f5] rounded-lg px-3 py-2 text-gray-500 font-semibold focus:ring-[#0059bb] focus:border-[#0059bb]" disabled type="text" value="0"/>
+                            </div>
+                            <!-- Title Field -->
+                            <div class="space-y-1.5 md:col-span-1">
+                                <label class="block font-bold text-sm text-[#191c1d]">Tên sách <span class="text-red-500">*</span></label>
+                                <input id="book-title" class="w-full border border-[#c1c6d7] rounded-lg px-3 py-2 focus:ring-1 focus:ring-[#0059bb] focus:border-[#0059bb] focus:outline-none transition-all placeholder:text-gray-400 text-sm" placeholder="Nhập tên sách" type="text" required/>
+                            </div>
+                            <!-- Author Field -->
+                            <div class="space-y-1.5">
+                                <label class="block font-bold text-sm text-[#191c1d]">Tác giả <span class="text-red-500">*</span></label>
+                                <input id="book-author" class="w-full border border-[#c1c6d7] rounded-lg px-3 py-2 focus:ring-1 focus:ring-[#0059bb] focus:border-[#0059bb] focus:outline-none transition-all placeholder:text-gray-400 text-sm" placeholder="Nhập tác giả" type="text" required/>
+                            </div>
+                            <!-- Price Field -->
+                            <div class="space-y-1.5">
+                                <label class="block font-bold text-sm text-[#191c1d]">Giá (VNĐ) <span class="text-red-500">*</span></label>
+                                <input id="book-price" class="w-full border border-[#c1c6d7] rounded-lg px-3 py-2 focus:ring-1 focus:ring-[#0059bb] focus:border-[#0059bb] focus:outline-none transition-all placeholder:text-gray-400 text-sm" placeholder="Nhập giá bán" type="number" min="1" required/>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="flex flex-wrap gap-3 pt-2">
+                            <button id="btn-add" type="button" class="flex items-center gap-2 bg-[#0059bb] text-white px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-[#0070ea] active:scale-95 transition-all shadow-sm">
+                                <span class="material-symbols-outlined text-lg">add</span> Thêm mới
+                            </button>
+                            <button id="btn-update" type="button" class="flex items-center gap-2 bg-[#28a745] text-white px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-green-600 active:scale-95 transition-all shadow-sm opacity-50 cursor-not-allowed" disabled>
+                                <span class="material-symbols-outlined text-lg">save</span> Cập nhật
+                            </button>
+                            <button id="btn-reset" type="button" class="flex items-center gap-2 bg-[#6c757d] text-white px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-gray-600 active:scale-95 transition-all shadow-sm">
+                                <span class="material-symbols-outlined text-lg">rotate_left</span> Làm lại
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Section: Danh sách sách -->
+            <section class="bg-white border border-[#e1e3e4] rounded-lg overflow-hidden shadow-sm">
+                <div class="bg-[#0059bb]/5 px-5 py-3.5 border-b border-[#e1e3e4] flex justify-between items-center">
+                    <h3 class="font-bold text-[#0059bb] text-base flex items-center gap-2">
+                        <span class="material-symbols-outlined">list_alt</span> Danh sách sách
+                    </h3>
+                    <button id="btn-refresh-list" class="text-xs text-[#0059bb] font-semibold hover:underline flex items-center gap-1">
+                        <span class="material-symbols-outlined text-sm">sync</span> Tải lại bảng
+                    </button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full border-collapse text-left">
+                        <thead>
+                            <tr class="bg-[#f8f9fa] border-b border-[#e1e3e4]">
+                                <th class="px-5 py-3 text-sm font-bold text-[#191c1d] w-16 text-center">Id</th>
+                                <th class="px-5 py-3 text-sm font-bold text-[#191c1d]">Tên sách</th>
+                                <th class="px-5 py-3 text-sm font-bold text-[#191c1d]">Tác giả</th>
+                                <th class="px-5 py-3 text-sm font-bold text-[#191c1d] text-right">Giá (VNĐ)</th>
+                                <th class="px-5 py-3 text-sm font-bold text-[#191c1d] text-center w-48">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="book-list" class="text-sm divide-y divide-[#e1e3e4]">
+                            <!-- Rows will be injected dynamically -->
+                            <tr>
+                                <td colspan="5" class="px-5 py-8 text-center text-gray-500">
+                                    <i class="fa-solid fa-spinner fa-spin mr-2"></i> Đang tải dữ liệu...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="px-5 py-3 bg-[#f3f4f5] border-t border-[#e1e3e4] flex justify-between items-center text-xs text-[#414754]">
+                    <span>Hệ thống RESTful API kết nối Cơ sở dữ liệu SQL Server</span>
+                    <span class="font-semibold text-[#0059bb] text-sm">Tổng số sách: <span id="total-books">0</span></span>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Modal: Xác nhận xóa -->
+    <div id="delete-modal" class="fixed inset-0 z-[100] flex items-center justify-center p-4 hidden">
+        <!-- Backdrop -->
+        <div class="absolute inset-0 bg-[#2e3132]/60 backdrop-blur-sm transition-opacity"></div>
+        <!-- Modal Content -->
+        <div class="relative bg-white rounded-xl shadow-2xl w-full max-w-md border border-[#e1e3e4] overflow-hidden transform transition-all scale-95 duration-200">
+            <div class="p-6">
+                <div class="flex items-center gap-4 mb-4">
+                    <div class="w-12 h-12 rounded-full bg-[#ffdad6] flex items-center justify-center text-[#ba1a1a]">
+                        <span class="material-symbols-outlined" style="font-size: 28px;">warning</span>
+                    </div>
+                    <div>
+                        <h4 class="text-lg font-bold text-[#191c1d]">Xác nhận xóa?</h4>
+                    </div>
+                </div>
+                <p class="text-sm text-[#414754] mb-6 leading-relaxed">
+                    Bạn có chắc chắn muốn xóa cuốn sách này không? Hành động này không thể hoàn tác và dữ liệu sẽ bị xóa vĩnh viễn khỏi hệ thống.
+                </p>
+                <div class="flex justify-end gap-3">
+                    <button id="btn-delete-cancel" class="px-5 py-2.5 rounded-lg text-sm font-semibold bg-gray-100 text-gray-700 hover:bg-gray-200 active:scale-95 transition-all border border-transparent">
+                        Hủy
+                    </button>
+                    <button id="btn-delete-confirm" class="px-6 py-2.5 rounded-lg text-sm font-semibold bg-[#ba1a1a] text-white hover:bg-red-700 shadow-lg shadow-red-200 active:scale-95 transition-all">
+                        Xóa
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts Section -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        // API Base URL
+        const API_URL = '/api/SachApi';
+        let deleteBookId = null;
+
+        $(document).ready(function() {
+            // Load book list on page load
+            loadBooks();
+
+            // Bind Event Listeners
+            $('#btn-add').click(addBook);
+            $('#btn-update').click(updateBook);
+            $('#btn-reset').click(resetForm);
+            $('#sidebar-reset').click(function(e) {
+                e.preventDefault();
+                resetForm();
+            });
+            $('#btn-refresh-list').click(loadBooks);
+
+            // Modal cancel bindings
+            $('#btn-delete-cancel, #delete-modal .absolute').click(closeDeleteModal);
+            $('#btn-delete-confirm').click(executeDeleteBook);
+        });
+
+        // 1. Get All Books
+        function loadBooks() {
+            $('#book-list').html(`
+                <tr>
+                    <td colspan="5" class="px-5 py-8 text-center text-gray-500">
+                        <i class="fa-solid fa-spinner fa-spin mr-2"></i> Đang tải dữ liệu...
+                    </td>
+                </tr>
+            `);
+
+            $.ajax({
+                url: API_URL,
+                type: 'GET',
+                dataType: 'json',
+                success: function(data) {
+                    renderTable(data);
+                },
+                error: function(xhr, status, error) {
+                    console.error("Lỗi khi tải danh sách sách:", error);
+                    showToast("Không thể tải danh sách sách từ API!", "error");
+                    $('#book-list').html(`
+                        <tr>
+                            <td colspan="5" class="px-5 py-8 text-center text-red-500 font-medium">
+                                <i class="fa-solid fa-triangle-exclamation mr-2"></i> Lỗi kết nối API backend!
+                            </td>
+                        </tr>
+                    `);
+                    $('#total-books').text('0');
+                }
+            });
+        }
+
+        // Render Table Rows
+        function renderTable(books) {
+            const tbody = $('#book-list');
+            tbody.empty();
+
+            if (books.length === 0) {
+                tbody.html(`
+                    <tr>
+                        <td colspan="5" class="px-5 py-8 text-center text-gray-400">
+                            Không có cuốn sách nào trong cơ sở dữ liệu.
+                        </td>
+                    </tr>
+                `);
+                $('#total-books').text('0');
+                return;
+            }
+
+            books.forEach(function(book) {
+                // Format price to currency standard with dots
+                const formattedPrice = book.price.toLocaleString('vi-VN');
+                
+                const row = `
+                    <tr class="hover:bg-gray-50 transition-colors" data-id="${book.id}">
+                        <td class="px-5 py-3.5 border-b border-[#e1e3e4] text-center font-semibold text-gray-600">${book.id}</td>
+                        <td class="px-5 py-3.5 border-b border-[#e1e3e4] font-medium text-gray-900 book-title-cell">${escapeHtml(book.title)}</td>
+                        <td class="px-5 py-3.5 border-b border-[#e1e3e4] text-gray-700 book-author-cell">${escapeHtml(book.author)}</td>
+                        <td class="px-5 py-3.5 border-b border-[#e1e3e4] text-right font-semibold text-gray-900 book-price-cell">${formattedPrice}</td>
+                        <td class="px-5 py-3.5 border-b border-[#e1e3e4] text-center">
+                            <div class="flex justify-center gap-2">
+                                <button onclick="editBook(${book.id})" class="flex items-center gap-1 bg-[#ffc107] text-[#141d23] px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-yellow-500 active:scale-95 transition-all shadow-sm">
+                                    <span class="material-symbols-outlined text-sm">edit</span> Sửa
+                                </button>
+                                <button onclick="openDeleteModal(${book.id})" class="flex items-center gap-1 bg-[#ba1a1a] text-white px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-red-700 active:scale-95 transition-all shadow-sm">
+                                    <span class="material-symbols-outlined text-sm">delete</span> Xóa
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                tbody.append(row);
+            });
+
+            $('#total-books').text(books.length);
+        }
+
+        // 2. Add New Book
+        function addBook() {
+            const bookData = getFormData();
+            if (!validateData(bookData)) return;
+
+            $.ajax({
+                url: API_URL,
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(bookData),
+                success: function(response) {
+                    showToast(`Đã thêm mới sách "${response.title}" thành công!`, "success");
+                    resetForm();
+                    loadBooks();
+                },
+                error: function(xhr) {
+                    handleApiError(xhr, "thêm mới");
+                }
+            });
+        }
+
+        // 3. Edit Book (Load data into Form)
+        function editBook(id) {
+            $.ajax({
+                url: `${API_URL}/${id}`,
+                type: 'GET',
+                dataType: 'json',
+                success: function(book) {
+                    // Populate Form Inputs
+                    $('#book-id').val(book.id);
+                    $('#book-title').val(book.title);
+                    $('#book-author').val(book.author);
+                    $('#book-price').val(book.price);
+
+                    // Update UI Buttons Mode to Edit
+                    $('#btn-add').addClass('opacity-50 cursor-not-allowed').prop('disabled', true);
+                    $('#btn-update').removeClass('opacity-50 cursor-not-allowed').prop('disabled', false);
+                    
+                    // Style highlight to denote editing mode
+                    $('#book-id').addClass('bg-yellow-50 border-yellow-300 text-yellow-800');
+
+                    showToast(`Đang chỉnh sửa sách mã ${book.id}`, "warning");
+                    // Scroll to form nicely
+                    $('html, body').animate({
+                        scrollTop: $("#book-form").offset().top - 100
+                    }, 500);
+                },
+                error: function(xhr) {
+                    showToast(`Không thể lấy thông tin chi tiết sách mã ${id}!`, "error");
+                }
+            });
+        }
+
+        // 4. Update Book
+        function updateBook() {
+            const bookData = getFormData();
+            if (!validateData(bookData)) return;
+
+            const id = parseInt($('#book-id').val());
+            bookData.id = id;
+
+            $.ajax({
+                url: `${API_URL}/${id}`,
+                type: 'PUT',
+                contentType: 'application/json',
+                data: JSON.stringify(bookData),
+                success: function(response) {
+                    showToast(`Đã cập nhật sách "${response.title}" thành công!`, "success");
+                    resetForm();
+                    loadBooks();
+                },
+                error: function(xhr) {
+                    handleApiError(xhr, "cập nhật");
+                }
+            });
+        }
+
+        // 5. Delete Book Setup Modal
+        function openDeleteModal(id) {
+            deleteBookId = id;
+            const row = $(`tr[data-id="${id}"]`);
+            const title = row.find('.book-title-cell').text();
+            
+            $('#delete-modal p').html(`Bạn có chắc chắn muốn xóa sách <strong>"${title}"</strong> (Mã số: ${id}) không? Hành động này không thể hoàn tác.`);
+            
+            // Show modal with animation
+            $('#delete-modal').removeClass('hidden');
+            setTimeout(() => {
+                $('#delete-modal .scale-95').removeClass('scale-95').addClass('scale-100');
+            }, 50);
+        }
+
+        function closeDeleteModal() {
+            $('#delete-modal .scale-100').removeClass('scale-100').addClass('scale-95');
+            setTimeout(() => {
+                $('#delete-modal').addClass('hidden');
+                deleteBookId = null;
+            }, 150);
+        }
+
+        function executeDeleteBook() {
+            if (deleteBookId === null) return;
+
+            $.ajax({
+                url: `${API_URL}/${deleteBookId}`,
+                type: 'DELETE',
+                success: function(response) {
+                    showToast("Xóa cuốn sách thành công!", "success");
+                    closeDeleteModal();
+                    
+                    // If we were editing this deleted book, reset form
+                    if (parseInt($('#book-id').val()) === response.id) {
+                        resetForm();
+                    }
+                    loadBooks();
+                },
+                error: function(xhr) {
+                    showToast("Đã xảy ra lỗi khi thực thi xóa sách!", "error");
+                    closeDeleteModal();
+                }
+            });
+        }
+
+        // Helper: Form Data extraction
+        function getFormData() {
+            return {
+                title: $.trim($('#book-title').val()),
+                author: $.trim($('#book-author').val()),
+                price: parseFloat($('#book-price').val())
+            };
+        }
+
+        // Helper: Reset form state
+        function resetForm() {
+            $('#book-form')[0].reset();
+            $('#book-id').val('0').removeClass('bg-yellow-50 border-yellow-300 text-yellow-800');
+            
+            // Reset buttons
+            $('#btn-add').removeClass('opacity-50 cursor-not-allowed').prop('disabled', false);
+            $('#btn-update').addClass('opacity-50 cursor-not-allowed').prop('disabled', true);
+        }
+
+        // Helper: Validate Data on Frontend Client
+        function validateData(book) {
+            if (book.title === '') {
+                showToast("Tên sách không được để trống!", "warning");
+                $('#book-title').focus();
+                return false;
+            }
+            if (book.author === '') {
+                showToast("Tác giả không được để trống!", "warning");
+                $('#book-author').focus();
+                return false;
+            }
+            if (isNaN(book.price) || book.price <= 0) {
+                showToast("Giá sách phải là số lớn hơn 0!", "warning");
+                $('#book-price').focus();
+                return false;
+            }
+            return true;
+        }
+
+        // Helper: Handle ASP.NET Core Validation Problem details errors
+        function handleApiError(xhr, actionName) {
+            if (xhr.status === 400) {
+                const response = xhr.responseJSON;
+                if (response && response.errors) {
+                    // Validation errors dictionary
+                    for (const field in response.errors) {
+                        response.errors[field].forEach(function(msg) {
+                            showToast(msg, "error");
+                        });
+                    }
+                } else if (response && response.message) {
+                    showToast(response.message, "error");
+                } else {
+                    showToast(`Dữ liệu gửi đi không hợp lệ để ${actionName}!`, "error");
+                }
+            } else {
+                showToast(`Không thể ${actionName} sách. Lỗi hệ thống!`, "error");
+            }
+        }
+
+        // Helper: Render Dynamic Toast Alert
+        function showToast(message, type = 'success') {
+            const container = $('#toast-container');
+            const id = 'toast-' + Date.now();
+
+            let icon = 'check_circle';
+            let bg = 'bg-white border-green-500';
+            let textColor = 'text-green-800';
+            let iconColor = 'text-green-500';
+
+            if (type === 'error') {
+                icon = 'cancel';
+                bg = 'bg-white border-red-500';
+                textColor = 'text-red-800';
+                iconColor = 'text-red-500';
+            } else if (type === 'warning') {
+                icon = 'warning';
+                bg = 'bg-white border-yellow-500';
+                textColor = 'text-yellow-800';
+                iconColor = 'text-yellow-500';
+            }
+
+            const toastHTML = `
+                <div id="${id}" class="toast-enter flex items-center gap-3 p-4 rounded-lg shadow-xl border-l-4 ${bg} pointer-events-auto w-80 max-w-sm transition-all transform duration-300">
+                    <span class="material-symbols-outlined ${iconColor} shrink-0">${icon}</span>
+                    <div class="text-sm font-semibold ${textColor} break-words w-full">${escapeHtml(message)}</div>
+                    <button onclick="removeToast('${id}')" class="text-gray-400 hover:text-gray-600 focus:outline-none shrink-0">
+                        <span class="material-symbols-outlined text-base">close</span>
+                    </button>
+                </div>
+            `;
+
+            container.append(toastHTML);
+
+            // Auto dismiss toast after 4.5 seconds
+            setTimeout(function() {
+                removeToast(id);
+            }, 4500);
+        }
+
+        function removeToast(id) {
+            const toast = $('#' + id);
+            if (toast.length) {
+                toast.removeClass('toast-enter').addClass('toast-exit');
+                setTimeout(function() {
+                    toast.remove();
+                }, 300);
+            }
+        }
+
+        // Safe HTML escape helper to prevent XSS
+        function escapeHtml(str) {
+            return $('<div/>').text(str).html();
+        }
+    </script>
+</body>
+</html>

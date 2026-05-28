@@ -55,35 +55,13 @@
                 <a class="text-sm font-semibold text-[#0059bb] border-b-2 border-[#0059bb] py-2 transition-colors" href="#">Dashboard</a>
                 <a class="text-sm font-medium text-[#414754] hover:bg-[#edeeef] transition-colors py-2 px-2 rounded" href="/swagger" target="_blank">Swagger API</a>
             </div>
-            <span class="material-symbols-outlined text-[#0059bb] cursor-pointer hover:bg-[#edeeef] p-1.5 rounded-full" title="Thông báo">notifications</span>
-            <span class="material-symbols-outlined text-[#0059bb] cursor-pointer hover:bg-[#edeeef] p-1.5 rounded-full" title="Tài khoản">account_circle</span>
         </div>
     </header>
 
-    <!-- SideNavBar -->
-    <aside class="fixed left-0 top-0 h-full flex flex-col pt-16 pb-4 px-4 bg-[#f3f4f5] border-r border-[#e1e3e4] w-64 hidden lg:flex">
-        <div class="mb-8 px-2">
-            <h2 class="text-lg font-bold text-[#0059bb]">Quản lý Sách</h2>
-            <p class="text-[#414754] text-xs">Hệ thống quản trị Cửa hàng</p>
-        </div>
-        <nav class="flex flex-col gap-1.5">
-            <a class="flex items-center gap-3 px-4 py-2.5 bg-[#d8e1ea] text-[#141d23] rounded-lg font-bold active:scale-95 transition-all" href="#">
-                <span class="material-symbols-outlined">dashboard</span>
-                <span>Dashboard</span>
-            </a>
-            <a class="flex items-center gap-3 px-4 py-2.5 text-[#575f67] hover:bg-[#edeeef] rounded-lg font-medium transition-all active:scale-95" href="/swagger" target="_blank">
-                <span class="material-symbols-outlined">api</span>
-                <span>Swagger API Docs</span>
-            </a>
-            <a class="flex items-center gap-3 px-4 py-2.5 text-[#575f67] hover:bg-[#edeeef] rounded-lg font-medium transition-all active:scale-95" href="#" id="sidebar-reset">
-                <span class="material-symbols-outlined">refresh</span>
-                <span>Làm mới Form</span>
-            </a>
-        </nav>
-    </aside>
+
 
     <!-- Main Content Area -->
-    <main class="lg:ml-64 pt-16 px-6 pb-12">
+    <main class="pt-16 px-6 pb-12">
         <div class="max-w-6xl mx-auto space-y-6 mt-4">
             
             <!-- Section: Thông tin sách -->
@@ -218,10 +196,6 @@
             $('#btn-add').click(addBook);
             $('#btn-update').click(updateBook);
             $('#btn-reset').click(resetForm);
-            $('#sidebar-reset').click(function(e) {
-                e.preventDefault();
-                resetForm();
-            });
             $('#btn-refresh-list').click(loadBooks);
 
             // Modal cancel bindings

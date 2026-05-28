@@ -11,7 +11,7 @@ using QuanLySach.Models;
 namespace QuanLySach.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260528071359_InitialCreate")]
+    [Migration("20260528073118_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -38,7 +38,7 @@ namespace QuanLySach.Migrations
                         .HasColumnType("nvarchar(100)");
 
                     b.Property<decimal>("Price")
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("decimal(18, 2)");
 
                     b.Property<string>("Title")
                         .IsRequired()
